@@ -6,26 +6,27 @@ ELEMENTS = ['Fraise', 'Pomme', 'Banane', 'Melon', 'Pêche', 'Cerise',
             'Poire', 'Ananas', 'Kiwi', 'Mangue','Pasteque', 'Pamplemousse',
             'Prune', 'Mirtille', 'Mûre', 'Figue']
 
-ELEMENTS = ['Fraise', 'Pomme', 'Bananes', 'Melon']
+ELEMENTS = ['Fraise', 'Pomme', 'Banane', 'Melon', 'Pêche', 'Cerise',
+            'Mandarine', 'Orange', 'Raisin', 'Framboise']
 
 QUESTION = 'Qui est le meilleur ?'
 
 NOMBRE_QUESTION_TOTAL = 0
 NOMBRE_QUESTION_FAIT = 0
+NOMBRE_QUESTION_REEL = 0
 
-CHOIX_GAUCHE = '1'
-CHOIX_DROITE = '2'
+CHOIX_GAUCHE = ''.join(map(chr, [27, 91, 68]))
+CHOIX_DROITE = ''.join(map(chr, [27, 91, 67]))
 CHOIX_ANNULER = 'annuler'
 
 
 def main():
     global NOMBRE_QUESTION_TOTAL
     NOMBRE_QUESTION_TOTAL = calculerNombreQuestion(ELEMENTS)
-    print('nombre de fruits : ', len(ELEMENTS))
-    print('question total : ', NOMBRE_QUESTION_TOTAL)
     elements = ELEMENTS.copy()
     triFusion(elements, 0, len(elements))
     afficherResultat(elements)
+    afficherStatistiques()
 
 
 # réalise un tri en place de élements entre debut (inclus) et fin (exclus)
@@ -41,7 +42,7 @@ def triFusion(elements, debut, fin):
 
 # fusionne 2 listes triés (debut-milieu et milieu-fin) en une seule liste triée
 def fusionneTriee(elements, debut, milieu, fin):
-    global NOMBRE_QUESTION_FAIT
+    global NOMBRE_QUESTION_FAIT, NOMBRE_QUESTION_REEL
     liste1 = elements[debut:milieu]
     liste2 = elements[milieu:fin]
     iterListe1 = iter(liste1)
@@ -67,10 +68,15 @@ def fusionneTriee(elements, debut, milieu, fin):
                 smallestListe2 = None
                 smallestListe2 = next(iterListe2)
             else: # annuler
+                haut = '\033[A'
+                gauche = 60 * '\b'
+                espace = 60 * ' '
                 if derniersChoix == []:
-                    print('Retour en arriere impossible :(')
+                    print(2 * (haut + espace + gauche) + 'Retour en arriere impossible :(')
                 else:
+                    print(3 * (haut + espace + gauche), end = haut)
                     choix = derniersChoix.pop()
+                    NOMBRE_QUESTION_REEL -= 1
                     NOMBRE_QUESTION_FAIT -= 1
                     if choix == 1:
                         iterListe1 = chain([smallestListe1], iterListe1)
@@ -89,7 +95,7 @@ def fusionneTriee(elements, debut, milieu, fin):
 # compare les deux éléments et renvoie 1 lorsque le premier est le meilleur,
 #  0 sinon et -1 en cas de retour en arriere
 def estMieuxQue(element1, element2):
-    global NOMBRE_QUESTION_FAIT, NOMBRE_QUESTION_TOTAL
+    global NOMBRE_QUESTION_FAIT, NOMBRE_QUESTION_TOTAL, NOMBRE_QUESTION_REEL
     choix = ''
     nombreTentative = 0
     while choix not in (CHOIX_GAUCHE, CHOIX_DROITE, CHOIX_ANNULER):
@@ -100,19 +106,26 @@ def estMieuxQue(element1, element2):
         print('{} {} ou {} [{}%]'.format(QUESTION, element1, element2, ratio))
         choix = input()
 
-    if choix == CHOIX_ANNULER:
-        print("\033[A\033[A\033[Aannuler")
-        return -1
+        if choix == CHOIX_ANNULER:
+            return -1
 
     print("\033[A" + (element1 if choix == CHOIX_GAUCHE else element2))
     NOMBRE_QUESTION_FAIT += 1
+    NOMBRE_QUESTION_REEL += 1
     return 1 if choix == CHOIX_GAUCHE else 2
 
 
 # affiche les éléments de façon jolie avec leur place
 def afficherResultat(elements):
+    print("\n ----- Resultats -----")
     for i,e in enumerate(elements):
-        print('{} {}\n'.format(i, e))
+        print('\t{}\t{}'.format(i, e))
+
+# affiche quelques statistiques à la fin du classement
+def afficherStatistiques():
+    print("\n ----- Stats -----")
+    print("\t{}\tquestions posées".format(NOMBRE_QUESTION_REEL))
+    print("\t{}\tquestions maximum".format(NOMBRE_QUESTION_TOTAL))
 
 
 # calcule le nombre maximal de question pour trier les éléments
